@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 set -e
 
-# Load .env if it exists
+# Safely load .env if it exists
 if [ -f .env ]; then
-    export $(grep -v '^#' .env | xargs)
+    set -a
+    source .env
+    set +a
 fi
 
 HOST="${HOST:-192.168.2.245}"
