@@ -1,31 +1,44 @@
-# Stage 1: Build Dependencies
+# Stage 1: Build dependencies
 FROM python:3.11-slim AS builder
 
 WORKDIR /app
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential gcc libpq-dev && \
-    rm -rf /var/lib/apt/lists/*
+    build-essential \
+    gcc \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir --user -r requirements.txt
 
-# Stage 2: Final Production Image
+# Install packages into a dedicated directory
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+
+
+# Stage 2: Runtime
 FROM python:3.11-slim AS runner
 
 WORKDIR /app
 
-# Create a non-root app user for production security
-RUN addgroup --system appgroup && adduser --system --group appuser
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq5 \
+    && rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /root/.local /home/appuser/.local
+# Copy installed Python packages and executables
+COPY --from=builder /install /usr/local
+
+# Create non-root user
+RUN addgroup --system appgroup && \
+    adduser --system --ingroup appgroup appuser
+
 COPY . /app
 
-ENV PATH=/home/appuser/.local/bin:$PATH \
-    PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/app
 
 USER appuser
 
 EXPOSE 8000
 
-CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "-w", "4", "-b", "0.0.0.0:8000", "app.main:app"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
