@@ -44,7 +44,7 @@ export class AuthService {
   }
 
   fetchCurrentUser(): void {
-    this.http.get<User>(`${environment.apiUrl}/auth/me`).subscribe({
+    this.http.get<User>(`${environment.apiUrl}/users/me`).subscribe({
       next: (user) => {
         this.currentUser.set(user);
       },

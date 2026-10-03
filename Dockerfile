@@ -21,6 +21,7 @@ FROM python:3.11-slim AS runner
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
     libpq5 \
     && rm -rf /var/lib/apt/lists/*
 
@@ -32,6 +33,8 @@ RUN addgroup --system appgroup && \
     adduser --system --ingroup appgroup appuser
 
 COPY . /app
+
+RUN chown -R appuser:appgroup /app
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
