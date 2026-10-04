@@ -7,14 +7,14 @@ echo "======================================"
 echo " Production Deployment"
 echo "======================================"
 
-echo "[1/4] Building API..."
-$COMPOSE build api
+echo "[1/4] Building API without cache..."
+$COMPOSE build --no-cache api
 
-echo "[2/4] Building Frontend..."
-$COMPOSE build frontend
+echo "[2/4] Building Frontend without cache..."
+$COMPOSE build --no-cache frontend
 
-echo "[3/4] Starting services..."
-$COMPOSE up -d
+echo "[3/4] Recreating application containers..."
+$COMPOSE up -d --force-recreate api frontend
 
 echo "[4/4] Service status..."
 $COMPOSE ps

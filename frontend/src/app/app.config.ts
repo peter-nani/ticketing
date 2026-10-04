@@ -16,7 +16,10 @@ export const appConfig: ApplicationConfig = {
         basePath: '',
         accessToken: () => {
           try {
-            return sessionStorage.getItem('access_token') ?? '';
+            // AuthService stores the session in localStorage so it is available
+            // when an internal route is opened in another tab. Keep the legacy
+            // sessionStorage fallback for sessions created by older versions.
+            return localStorage.getItem('access_token') ?? sessionStorage.getItem('access_token') ?? '';
           } catch {
             return '';
           }

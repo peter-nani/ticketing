@@ -1,5 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Observable, catchError, finalize, map, of, shareReplay, switchMap, tap, throwError } from 'rxjs';
 import { AuthenticationApi, TokenDto, UserRegistrationDto, UserResponseDto, UsersApi } from '../../api/generated';
 
@@ -19,9 +20,14 @@ export class AuthService {
   private refreshRequest: Observable<string> | null = null;
 
   constructor() {
+    console.info('[auth] bootstrap', {
+      accessTokenPresent: this.accessToken() !== null,
+      storage: this.hasLocalAccessToken() ? 'localStorage' : this.hasSessionAccessToken() ? 'sessionStorage' : 'none',
+    });
     if (typeof window !== 'undefined') {
       window.addEventListener('storage', (event) => {
         if (event.key !== ACCESS_TOKEN_KEY) return;
+        console.info('[auth] cross-tab access token changed', { accessTokenPresent: event.newValue !== null });
         this.accessToken.set(event.newValue);
         this.currentUser.set(null);
         this.profileRequest = null;
@@ -53,9 +59,20 @@ export class AuthService {
   refreshAccessToken(): Observable<string> {
     if (this.refreshRequest) return this.refreshRequest;
     const refreshToken = this.readStoredRefreshToken();
-    if (!refreshToken) return throwError(() => new Error('No refresh token is available.'));
+    if (!refreshToken) {
+      console.warn('[auth] refresh unavailable: no stored refresh token');
+      return throwError(() => new Error('No refresh token is available.'));
+    }
+    console.info('[auth] refresh started');
     this.refreshRequest = this.authenticationApi.refreshApiV1AuthRefreshPost({ refresh_token: refreshToken }).pipe(
-      tap((tokens) => this.storeTokens(tokens)),
+      tap((tokens) => {
+        this.storeTokens(tokens);
+        console.info('[auth] refresh succeeded');
+      }),
+      catchError((error: unknown) => {
+        console.warn('[auth] refresh failed', { status: error instanceof HttpErrorResponse ? error.status : 'network-or-client-error' });
+        return throwError(() => error);
+      }),
       map((tokens) => tokens.access_token),
       finalize(() => { this.refreshRequest = null; }),
       shareReplay({ bufferSize: 1, refCount: false })
@@ -68,12 +85,21 @@ export class AuthService {
     if (currentUser) return of(currentUser);
     if (!this.accessToken()) return of(null);
     if (!this.profileRequest) {
+      const requestToken = this.accessToken();
       this.profileRequest = this.usersApi.readUserMeApiV1UsersMeGet().pipe(
         tap((user) => this.currentUser.set(user)),
         map((user) => user as UserResponseDto | null),
-        catchError(() => {
-          this.clearSession(false);
-          return of(null);
+        catchError((error: unknown) => {
+          // A failed request can race a refresh or a login in another tab.
+          // Only clear shared credentials for a confirmed 401, and only when
+          // they are still the credentials this request used.
+          if (error instanceof HttpErrorResponse && error.status === 401) {
+            const cleared = this.clearSessionIfTokenMatches(requestToken);
+            console.warn('[auth] profile request unauthorized', { sharedCredentialsCleared: cleared });
+            return of(null);
+          }
+          console.warn('[auth] profile request failed', { status: error instanceof HttpErrorResponse ? error.status : 'network-or-client-error' });
+          return throwError(() => error);
         }),
         shareReplay({ bufferSize: 1, refCount: false })
       );
@@ -83,6 +109,12 @@ export class AuthService {
 
   getToken(): string | null {
     return this.accessToken();
+  }
+
+  getLatestStoredToken(): string | null {
+    const token = this.readStoredToken();
+    this.accessToken.set(token);
+    return token;
   }
 
   logout(): void {
@@ -103,6 +135,12 @@ export class AuthService {
       // Storage may be unavailable in a restricted browser context.
     }
     if (redirect) void this.router.navigate(['/login']);
+  }
+
+  clearSessionIfTokenMatches(token: string | null): boolean {
+    if (!token || this.readStoredToken() !== token) return false;
+    this.clearSession(false);
+    return true;
   }
 
   private storeTokens(tokens: TokenDto): void {
@@ -128,6 +166,14 @@ export class AuthService {
     } catch {
       return null;
     }
+  }
+
+  private hasLocalAccessToken(): boolean {
+    try { return localStorage.getItem(ACCESS_TOKEN_KEY) !== null; } catch { return false; }
+  }
+
+  private hasSessionAccessToken(): boolean {
+    try { return sessionStorage.getItem(ACCESS_TOKEN_KEY) !== null; } catch { return false; }
   }
 
   private readStoredRefreshToken(): string | null {
