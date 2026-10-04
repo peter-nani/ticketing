@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   db:
     image: postgres:15-alpine
@@ -27,7 +25,22 @@ services:
       retries: 5
     restart: always
 
+  migrate:
+    image: ticketing-api:local
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ticket_migrate_prod
+    env_file:
+      - .env
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
   api:
+    image: ticketing-api:local
     build:
       context: .
       dockerfile: Dockerfile
@@ -35,15 +48,20 @@ services:
     restart: always
     env_file:
       - .env
+    environment:
+      TICKET_IMAGE_STORAGE_PATH: ${TICKET_IMAGE_STORAGE_PATH:-/app/storage/images}
+      COMMENT_IMAGE_MAX_BYTES: ${COMMENT_IMAGE_MAX_BYTES:-8388608}
+    volumes:
+      - ticket_images:/app/storage/images
     ports:
       - "${HOST:-192.168.2.245}:${PORT:-8000}:8000"
     depends_on:
-      db:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/healthz"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/ready"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -60,3 +78,4 @@ services:
         condition: service_healthy
 volumes:
   postgres_data_prod:
+  ticket_images:

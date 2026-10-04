@@ -32,6 +32,7 @@ COPY --from=builder /install /usr/local
 RUN addgroup --system appgroup && \
     adduser --system --ingroup appgroup appuser
 
+RUN mkdir -p /app/storage/images
 COPY . /app
 
 RUN chown -R appuser:appgroup /app

@@ -22,6 +22,7 @@ class TicketUpdate(BaseModel):
     priority: Optional[TicketPriority] = None
     category: Optional[TicketCategory] = None
     assignee_id: Optional[int] = None
+    tags: Optional[List[str]] = None
 
 class TicketResponse(TicketBase):
     id: int
@@ -36,6 +37,21 @@ class TicketResponse(TicketBase):
     assignee: Optional[UserResponse] = None
     comments: List[CommentResponse] = []
     attachments: List[AttachmentResponse] = []
+    tags: List[str] = []
+
+    class Config:
+        from_attributes = True
+
+
+class TicketAuditLogResponse(BaseModel):
+    id: int
+    ticket_id: int
+    user_id: int
+    action_type: str
+    old_value: Optional[str] = None
+    new_value: Optional[str] = None
+    timestamp: datetime
+    actor_name: str
 
     class Config:
         from_attributes = True

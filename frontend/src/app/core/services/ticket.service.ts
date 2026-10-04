@@ -1,134 +1,80 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import {
-  Ticket,
-  TicketCreate,
-  TicketUpdate
-} from '../../models/ticket.model';
-import { Comment } from '../../models/comment.model';
-import { Attachment } from '../../models/attachment.model';
+  CommentResponseDto,
+  PaginatedResponseTicketResponseDto,
+  TicketCategoryDto,
+  TicketCreateDto,
+  TicketPriorityDto,
+  TicketResponseDto,
+  TicketStatusDto,
+  TicketUpdateDto,
+  TicketsApi
+} from '../../api/generated';
 
-export interface PaginatedTickets {
-  items: Ticket[];
-  total: number;
+export interface TicketFilters {
   page: number;
   size: number;
-  pages: number;
+  status?: TicketStatusDto;
+  priority?: TicketPriorityDto;
+  category?: TicketCategoryDto;
+  assigneeId?: number;
+  reporterId?: number;
+  query?: string;
 }
 
-@Injectable({
-  providedIn: 'root'
-})
+export interface TicketAuditEvent {
+  id: number; ticket_id: number; user_id: number; action_type: string;
+  old_value: string | null; new_value: string | null; timestamp: string; actor_name: string;
+}
+
+@Injectable({ providedIn: 'root' })
 export class TicketService {
-  private http = inject(HttpClient);
+  private readonly api = inject(TicketsApi);
+  private readonly http = inject(HttpClient);
 
-  private apiUrl = `${environment.apiUrl}/tickets/`;
-
-  /**
-   * Get paginated tickets.
-   *
-   * Backend response:
-   * {
-   *   items: Ticket[],
-   *   total: number,
-   *   page: number,
-   *   size: number,
-   *   pages: number
-   * }
-   */
-  getTickets(filters?: {
-    status?: string;
-    priority?: string;
-    page?: number;
-    size?: number;
-  }): Observable<PaginatedTickets> {
-
-    let params = new HttpParams();
-
-    if (filters?.status) {
-      params = params.set('status', filters.status);
-    }
-
-    if (filters?.priority) {
-      params = params.set('priority', filters.priority);
-    }
-
-    if (filters?.page !== undefined) {
-      params = params.set('page', filters.page.toString());
-    }
-
-    if (filters?.size !== undefined) {
-      params = params.set('size', filters.size.toString());
-    }
-
-    return this.http.get<PaginatedTickets>(
-      this.apiUrl,
-      { params }
+  list(filters: TicketFilters): Observable<PaginatedResponseTicketResponseDto> {
+    return this.api.listTicketsApiV1TicketsGet(
+      filters.page,
+      filters.size,
+      filters.status,
+      filters.priority,
+      filters.category,
+      filters.assigneeId,
+      filters.reporterId,
+      filters.query
     );
   }
 
-  /**
-   * Get a single ticket.
-   */
-  getTicketById(id: number): Observable<Ticket> {
-    return this.http.get<Ticket>(
-      `${this.apiUrl}${id}`
-    );
+  get(ticketId: number): Observable<TicketResponseDto> {
+    return this.api.getTicketApiV1TicketsTicketIdGet(ticketId);
   }
 
-  /**
-   * Create a new ticket.
-   */
-  createTicket(payload: TicketCreate): Observable<Ticket> {
-    return this.http.post<Ticket>(
-      this.apiUrl,
-      payload
-    );
+  activity(ticketId: number): Observable<TicketAuditEvent[]> {
+    return this.http.get<TicketAuditEvent[]>(`/api/v1/tickets/${ticketId}/activity`);
   }
 
-  /**
-   * Update an existing ticket.
-   */
-  updateTicket(
-    id: number,
-    payload: TicketUpdate
-  ): Observable<Ticket> {
-    return this.http.patch<Ticket>(
-      `${this.apiUrl}${id}`,
-      payload
-    );
+  create(ticket: TicketCreateDto): Observable<TicketResponseDto> {
+    return this.api.createTicketApiV1TicketsPost(ticket);
   }
 
-  /**
-   * Add a comment to a ticket.
-   */
-  addComment(
-    ticketId: number,
-    text: string
-  ): Observable<Comment> {
-    return this.http.post<Comment>(
-      `${this.apiUrl}${ticketId}/comments`,
-      { text }
-    );
+  update(ticketId: number, ticket: TicketUpdateDto): Observable<TicketResponseDto> {
+    return this.api.updateTicketApiV1TicketsTicketIdPatch(ticketId, ticket);
   }
 
-  /**
-   * Upload an attachment to a ticket.
-   */
-  uploadAttachment(
-    ticketId: number,
-    file: File
-  ): Observable<Attachment> {
+  delete(ticketId: number): Observable<void> {
+    return this.api.deleteTicketApiV1TicketsTicketIdDelete(ticketId);
+  }
 
-    const formData = new FormData();
-    formData.append('file', file);
+  addComment(ticketId: number, content: string, image?: File): Observable<CommentResponseDto> {
+    const body = new FormData();
+    body.append('content', content);
+    if (image) body.append('image', image, image.name);
+    return this.http.post<CommentResponseDto>(`/api/v1/tickets/${ticketId}/comments`, body);
+  }
 
-    return this.http.post<Attachment>(
-      `${this.apiUrl}${ticketId}/attachments`,
-      formData
-    );
+  commentImage(ticketId: number, commentId: number): Observable<Blob> {
+    return this.http.get(`/api/v1/tickets/${ticketId}/comments/${commentId}/image`, { responseType: 'blob' });
   }
 }

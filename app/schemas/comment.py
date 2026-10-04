@@ -1,5 +1,6 @@
 from datetime import datetime
 from pydantic import BaseModel
+from typing import Optional
 from app.schemas.user import UserResponse
 
 class CommentBase(BaseModel):
@@ -14,6 +15,7 @@ class CommentResponse(CommentBase):
     author_id: int
     created_at: datetime
     author: UserResponse
+    image_path: Optional[str] = None
 
     class Config:
         from_attributes = True

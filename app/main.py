@@ -1,11 +1,13 @@
-from fastapi import FastAPI, status
+from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 from app.core.config import settings
 from app.core.logging import setup_logging
 from app.middlewares.correlation_id import CorrelationIdMiddleware
 from app.middlewares.error_handler import setup_exception_handlers
 from app.api.v1.router import api_router
-from app.models import user, ticket, comment, attachment
+from app.core.database import engine
+from app.models import user, ticket, comment, attachment, ticket_audit_log, ticket_tag
 import structlog
 
 setup_logging()
@@ -45,8 +47,13 @@ def create_app() -> FastAPI:
 
     @app.get("/ready", status_code=status.HTTP_200_OK, tags=["Health"])
     async def readiness_check():
-        # Add database connectivity check here if needed
-        return {"status": "ready"}
+        try:
+            async with engine.connect() as connection:
+                await connection.execute(text("SELECT 1"))
+        except Exception as exc:
+            logger.exception("Readiness check failed: database unavailable")
+            raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Database unavailable") from exc
+        return {"status": "ready", "database": "connected"}
 
     return app
 

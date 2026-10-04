@@ -24,4 +24,19 @@ class UserRepository(BaseRepository[User, UserCreate, UserUpdate]):
         await db.refresh(db_obj)
         return db_obj
 
+    async def update_user(self, db: AsyncSession, *, db_obj: User, obj_in: UserUpdate) -> User:
+        update_data = obj_in.model_dump(exclude_unset=True)
+        for field in ("email", "role", "is_active", "password"):
+            if update_data.get(field) is None:
+                update_data.pop(field, None)
+        password = update_data.pop("password", None)
+        if password:
+            update_data["hashed_password"] = get_password_hash(password)
+        for field, value in update_data.items():
+            setattr(db_obj, field, value)
+        db.add(db_obj)
+        await db.commit()
+        await db.refresh(db_obj)
+        return db_obj
+
 user_repository = UserRepository(User)

@@ -9,8 +9,10 @@ from app.core.config import settings
 from app.core.database import Base
 from app.models.user import User
 from app.models.ticket import Ticket
-from app.models.comment import Comment
 from app.models.attachment import Attachment
+from app.models.ticket_audit_log import TicketAuditLog
+from app.models.ticket_tag import TicketTag
+from app.models.comment import Comment
 
 config = context.config
 

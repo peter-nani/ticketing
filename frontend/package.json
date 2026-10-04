@@ -5,6 +5,7 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
+    "api:generate": "./scripts/generate-api-client.sh",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },

@@ -1,18 +1,16 @@
 import { inject } from '@angular/core';
-import { Router, CanActivateFn } from '@angular/router';
+import { CanActivateFn, Router } from '@angular/router';
+import { map } from 'rxjs';
 import { AuthService } from '../services/auth.service';
+import { UserRoleDto } from '../../api/generated';
 
-export const roleGuard: CanActivateFn = (route, state) => {
-  const authService = inject(AuthService);
+export const roleGuard: CanActivateFn = (route) => {
+  const auth = inject(AuthService);
   const router = inject(Router);
-  const user = authService.currentUser();
-
-  const expectedRole = route.data['role'] as string;
-
-  if (user && user.role === expectedRole) {
-    return true;
-  }
-
-  router.navigate(['/dashboard']);
-  return false;
+  const allowedRoles = route.data['roles'] as UserRoleDto[] | undefined;
+  return auth.ensureUser().pipe(
+    map((user) => user && allowedRoles?.includes(user.role ?? UserRoleDto.Customer)
+      ? true
+      : router.createUrlTree(['/dashboard']))
+  );
 };

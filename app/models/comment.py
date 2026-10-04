@@ -9,6 +9,7 @@ class Comment(Base):
     ticket_id = Column(Integer, ForeignKey("tickets.id"), nullable=False)
     author_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     content = Column(String, nullable=False)
+    image_path = Column(String(255), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     ticket = relationship("Ticket", back_populates="comments")

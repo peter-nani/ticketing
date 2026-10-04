@@ -22,6 +22,8 @@ async def get_current_user(
             token, settings.SECRET_KEY, algorithms=["HS256"]
         )
         token_data = TokenPayload(**payload)
+        if token_data.token_type != "access":
+            raise ValueError("Access token required")
     except (JWTError, ValueError):
         raise UnauthorizedException(detail="Could not validate credentials")
     

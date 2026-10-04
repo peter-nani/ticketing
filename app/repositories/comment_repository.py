@@ -12,6 +12,7 @@ class CommentRepository(BaseRepository[Comment, CommentCreate, CommentCreate]):
             select(Comment)
             .options(selectinload(Comment.author))
             .filter(Comment.ticket_id == ticket_id)
+            .order_by(Comment.created_at.asc(), Comment.id.asc())
         )
         return result.scalars().all()
 

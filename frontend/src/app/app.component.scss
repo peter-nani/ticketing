@@ -1,0 +1,44 @@
+:host { display: block; min-height: 100vh; }
+
+.app-shell { min-height: 100vh; display: flex; }
+.workspace { min-width:0; flex:1; margin-left:0; }
+.workspace-header { position:sticky; top:0; z-index:15; min-height:64px; padding:.65rem 1.5rem; display:flex; align-items:center; gap:1.25rem; justify-content:space-between; border-bottom:1px solid var(--line); background:var(--surface); }
+.header-brand { display:flex; align-items:center; gap:.55rem; min-width:155px; }
+.menu-toggle { display:grid; place-items:center; width:34px; height:34px; border:0; border-radius:50%; color:var(--ink-2); background:transparent; font-size:1.45rem; }
+.menu-toggle:hover { background:var(--surface-muted); }
+.softility-brand { display:flex; align-items:center; gap:.5rem; color:var(--ink); text-decoration:none; font-size:1rem; letter-spacing:-.03em; }
+.softility-mark { display:grid; place-items:center; width:29px; height:29px; border-radius:9px; color:#fff; background:var(--brand); font-size:.85rem; font-weight:800; }
+.search-wrap { position:relative; flex:1; max-width:720px; }
+.global-search { display:flex; align-items:center; height:40px; padding:0 .6rem 0 .85rem; border:1px solid var(--line); border-radius:999px; color:var(--muted); background:var(--canvas); }
+.global-search input { flex:1; min-width:0; height:100%; padding:0 .6rem; border:0; outline:0; color:var(--ink); background:transparent; font-size:13px; }
+.global-search button,.header-icon { display:grid; place-items:center; width:30px; height:30px; border:0; border-radius:50%; color:var(--ink-2); background:transparent; }
+.global-search button:hover,.header-icon:hover { background:var(--surface-muted); }
+.filter-popover { position:absolute; top:calc(100% + .55rem); right:0; z-index:40; width:min(340px, calc(100vw - 1.5rem)); display:grid; gap:.6rem; padding:.9rem; box-shadow:0 12px 34px rgba(15,25,45,.18); }
+.filter-popover label,.profile-popover label { display:grid; gap:.25rem; color:var(--ink-2); font-size:12px; font-weight:650; }
+.filter-popover .form-select { min-height:31px; padding-top:3px; padding-bottom:3px; font-size:12px; }
+.tag-multiselect { min-height:76px!important; }
+.filter-popover-actions { display:flex; justify-content:space-between; gap:.5rem; padding-top:.25rem; }
+.clear-button { border:1px solid var(--border-interactive)!important; color:var(--text-primary)!important; background:var(--surface)!important; font-weight:700; }
+.profile-menu { position:relative; }
+.profile-trigger { display:flex; align-items:center; gap:.35rem; cursor:pointer; list-style:none; color:var(--ink-2); }
+.profile-trigger::-webkit-details-marker { display:none; }
+.user-avatar { display:grid; place-items:center; width:34px; height:34px; border-radius:50%; color:#fff; background:var(--brand); font-weight:700; }
+.profile-popover { position:absolute; top:calc(100% + .55rem); right:0; z-index:40; display:grid; gap:.45rem; min-width:220px; padding:.8rem; box-shadow:0 12px 34px rgba(15,25,45,.18); }
+.profile-popover strong { color:var(--ink); font-size:13px; }
+.profile-popover small { color:var(--muted); font-size:11px; }
+.profile-popover hr { width:100%; margin:.2rem 0; border-color:var(--line); }
+.profile-popover a,.profile-popover button { display:block; padding:.45rem; border:0; border-radius:.4rem; color:var(--text-primary); background:transparent; text-align:left; text-decoration:none; font-size:12px; }
+.profile-popover a:hover,.profile-popover button:hover { background:var(--surface-muted); }
+.user-avatar { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; color: #fff; background: var(--brand); font-weight: 700; }
+.workspace-content { max-width: 1440px; margin: 0 auto; padding: 2rem 2.5rem 3rem; }
+.auth-shell { display: block; background: #fff; }
+.auth-content { min-height: 100vh; }
+
+@media (max-width: 767.98px) {
+  .workspace { margin-left:0; }
+  .workspace-header { min-height:58px; padding:.55rem .75rem; gap:.5rem; }
+  .header-brand { min-width:auto; gap:.2rem; }
+  .softility-brand { font-size:.88rem; }
+  .global-search { height:34px; }
+  .workspace-content { padding: 1.25rem 1rem 2rem; }
+}

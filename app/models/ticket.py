@@ -1,5 +1,5 @@
 import enum
-from sqlalchemy import Column, String, Integer, DateTime, Enum, ForeignKey, func, Boolean
+from sqlalchemy import Column, String, Integer, DateTime, Enum, ForeignKey, func, Boolean, JSON
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 
@@ -37,6 +37,7 @@ class Ticket(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     resolved_at = Column(DateTime(timezone=True), nullable=True)
     is_deleted = Column(Boolean, default=False)
+    tags = Column(JSON, nullable=False, default=list)
 
     reporter = relationship("User", foreign_keys=[reporter_id])
     assignee = relationship("User", foreign_keys=[assignee_id])

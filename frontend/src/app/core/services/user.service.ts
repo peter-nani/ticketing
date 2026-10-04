@@ -1,21 +1,20 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../../environments/environment';
-import { User } from '../../models/user.model';
+import { UserCreateDto, UserResponseDto, UserUpdateDto, UsersApi } from '../../api/generated';
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class UserService {
-  private http = inject(HttpClient);
-  private apiUrl = `${environment.apiUrl}/users`;
+  private readonly api = inject(UsersApi);
 
-  getUsers(): Observable<User[]> {
-    return this.http.get<User[]>(this.apiUrl);
+  getUsers(): Observable<UserResponseDto[]> {
+    return this.api.readUsersApiV1UsersGet(0, 100);
   }
 
-  updateUser(id: number, payload: { role?: string; is_active?: boolean }): Observable<User> {
-    return this.http.patch<User>(`${this.apiUrl}/${id}`, payload);
+  createUser(user: UserCreateDto): Observable<UserResponseDto> {
+    return this.api.createUserApiV1UsersPost(user);
+  }
+
+  updateUser(userId: number, user: UserUpdateDto): Observable<UserResponseDto> {
+    return this.api.updateUserApiV1UsersUserIdPatch(userId, user);
   }
 }

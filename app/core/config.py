@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import List, Optional, Union
 from pydantic import AnyHttpUrl, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     SECRET_KEY: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+    ALLOWED_USER_EMAIL_DOMAIN: str = "softility.com"
     
     APP_NAME: str = "FastAPI Ticketing Service"
     APP_ENV: str = "development"
@@ -17,6 +18,8 @@ class Settings(BaseSettings):
     HOST: str = "192.168.2.245"
     PORT: int = 8000
     WORKERS_COUNT: int = 4
+    TICKET_IMAGE_STORAGE_PATH: str = "./storage/images"
+    COMMENT_IMAGE_MAX_BYTES: int = 8 * 1024 * 1024
 
     # DATABASE
     POSTGRES_SERVER: str
@@ -24,11 +27,11 @@ class Settings(BaseSettings):
     POSTGRES_USER: str
     POSTGRES_PASSWORD: str
     POSTGRES_DB: str
-    DATABASE_URL: str | None = None
+    DATABASE_URL: Optional[str] = None
 
     @field_validator("DATABASE_URL", mode="before")
     @classmethod
-    def assemble_db_connection(cls, v: str | None, info) -> str:
+    def assemble_db_connection(cls, v: Optional[str], info) -> str:
         if isinstance(v, str):
             return v
         return f"postgresql+asyncpg://{info.data.get('POSTGRES_USER')}:{info.data.get('POSTGRES_PASSWORD')}@{info.data.get('POSTGRES_SERVER')}:{info.data.get('POSTGRES_PORT')}/{info.data.get('POSTGRES_DB')}"
@@ -63,3 +66,10 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+
+def is_allowed_user_email(email: str) -> bool:
+    allowed_domain = settings.ALLOWED_USER_EMAIL_DOMAIN.strip().lower().lstrip("@")
+    if not allowed_domain or allowed_domain == "*":
+        return True
+    return email.strip().rsplit("@", 1)[-1].lower() == allowed_domain
