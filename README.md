@@ -1,38 +1,31 @@
-# Ticketing
+# Ticketing application
 
-FastAPI and Angular ticketing application.
+FastAPI backend, Angular frontend, PostgreSQL database, and Redis service, packaged with Docker Compose.
 
-## Run locally without Docker
+## Deploy the containers
 
-Requirements: Python 3.9+, Node.js/npm. Local startup defaults to an SQLite database file (`ticketing.local.db`); Redis is not currently accessed by the application at runtime. PostgreSQL can be selected with `LOCAL_DATABASE_URL`.
-
-1. Install dependencies and create `.env` if it does not exist:
-
-   ```sh
-   ./setup-local.sh
-   ```
-
-2. Start the API and Angular development server:
-
-   ```sh
-   ./start-local.sh
-   ```
-
-The script creates any missing development tables before starting both servers. The Angular proxy sends `/api` requests to the backend.
-
-- Frontend: <http://127.0.0.1:4201>
-- API docs: <http://127.0.0.1:8001/docs>
-
-The host-run services use ports 8001 and 4201 to avoid Docker's default 8000 and 4200 ports. Set `LOCAL_API_HOST`, `LOCAL_API_PORT`, `LOCAL_DATABASE_URL`, `WEB_HOST`, or `WEB_PORT` to override the local defaults. Stop both servers with Ctrl+C.
-
-## Production deployment
-
-The production Compose stack runs the Alembic migration service before starting the API. Apply a new migration with `./deploy-prod.sh`; the API will not start if the migration fails. The initial revision creates the schema on a fresh database and baselines a complete schema created by the earlier `create_all` setup.
-
-On a fresh database, create the first administrator interactively after deployment:
+Requirements: Docker Engine and the Docker Compose plugin. From the repository root:
 
 ```sh
-docker compose -f docker-compose.prod.yml exec api python -m app.cli.create_admin
+cp .env.example .env
+# Edit .env with production values. See the environment guide.
+./deploy-prod.sh
 ```
 
-The command prompts for the initial administrator email and password without putting them in source or environment files. Public registration always creates a Customer account. Administrators can create accounts, change roles, reset passwords, and activate or deactivate accounts from **User management**. Only administrators can access those user-management endpoints; only administrators can delete tickets.
+The deployment script builds the API and frontend images, then starts the API, frontend, PostgreSQL, Redis, and the Alembic migration service. The API waits for the database migration to finish before it starts.
+
+Open the frontend at `http://<server-address>:${FRONTEND_PORT:-4200}` and API docs at `http://<server-address>:${PORT:-8000}/docs`. Create the first administrator using the steps in the admin guide.
+
+PostgreSQL data is stored in the Compose named volume `postgres_data_prod`; rebuilding or recreating application containers preserves it. Do not use `docker compose down -v` unless you intend to delete the database and image-storage volumes.
+
+## Deployment guides
+
+- [Container deployment and operations](docs/container-deployment.md)
+- [Environment variables](docs/environment-variables.md)
+- [Database migrations](docs/database-migrations.md)
+- [Restoring an older database backup](docs/restore-previous-database.md)
+- [First administrator setup](docs/admin-user-creation.md)
+
+## Local development
+
+Use `./setup-local.sh` to prepare dependencies and `.env`, then `./start-local.sh` to run the API and Angular development server. Local startup uses ports 8001 and 4201 by default. See the container and environment guides for configuration details.

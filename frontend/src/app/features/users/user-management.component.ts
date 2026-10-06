@@ -25,7 +25,7 @@ import { AppConfigService, emailDomainValidator } from '../../core/services/app-
           <div class="user-form-grid">
             <div><label class="form-label" for="user-full-name">Full name</label><input id="user-full-name" class="form-control" formControlName="full_name" maxlength="120" autocomplete="name"></div>
             <div><label class="form-label" for="user-email">Email</label><input id="user-email" type="email" class="form-control" formControlName="email" autocomplete="email" [class.is-invalid]="invalid('email')">@if (!editingUser) { <div class="form-text">New users must use an &#64;{{ allowedDomain }} address.</div> }@if (invalid('email')) { <div class="invalid-feedback">@if (form.controls.email.hasError('emailDomain')) { Use an email address ending in &#64;{{ allowedDomain }}. } @else { Enter a valid email address. }</div> }</div>
-            <div><label class="form-label" for="user-role">Role</label><select id="user-role" class="form-select" formControlName="role"><option [ngValue]="UserRole.Customer">Customer</option><option [ngValue]="UserRole.Agent">Agent</option><option [ngValue]="UserRole.Admin">Admin</option></select></div>
+            <div><label class="form-label" for="user-role">Role</label><select id="user-role" class="form-select" formControlName="role"><option [ngValue]="UserRole.Customer">Customer</option><option [ngValue]="UserRole.Agent">Agent</option>@if (editingUser?.role === UserRole.Admin) { <option [ngValue]="UserRole.Admin">Admin</option> }</select><div class="form-text">Administrator accounts are created through the API docs.</div></div>
             <div class="active-control"><input id="user-active" type="checkbox" class="form-check-input" formControlName="is_active"><label class="form-check-label" for="user-active">Account active</label></div>
             <div><label class="form-label" for="user-password">{{ resetPasswordMode ? 'New password' : editingUser ? 'New password (optional)' : 'Password' }}</label><input id="user-password" type="password" class="form-control" formControlName="password" autocomplete="new-password" [placeholder]="resetPasswordMode || !editingUser ? 'At least 8 characters' : 'Leave blank to keep current password'" [class.is-invalid]="invalid('password')">@if (invalid('password')) { <div class="invalid-feedback">Use at least 8 characters (maximum 72).</div> }</div>
           </div>
@@ -41,7 +41,7 @@ import { AppConfigService, emailDomainValidator } from '../../core/services/app-
       @else if (errorMessage) { <div class="empty-state"><div class="empty-icon"><i class="bi bi-wifi-off"></i></div><h3>User directory unavailable</h3><p>{{ errorMessage }}</p><button class="btn btn-outline-primary" type="button" (click)="load()"><i class="bi bi-arrow-clockwise me-2"></i>Try again</button></div> }
       @else if (users.length) {
         <div class="table-responsive"><table class="table table-hover align-middle user-table"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th><span class="visually-hidden">Actions</span></th></tr></thead>
-          <tbody>@for (user of users; track user.id) { <tr><td><div class="person-cell"><span class="person-avatar">{{ initials(user.full_name || user.email) }}</span><div><strong>{{ user.full_name || 'Name not provided' }}</strong><small>#{{ user.id }}</small></div></div></td><td>{{ user.email }}</td><td><select class="form-select form-select-sm role-select" [ngModel]="user.role ?? UserRole.Customer" (ngModelChange)="setRole(user, $event)" [disabled]="updatingUserId === user.id" [attr.aria-label]="'Role for ' + user.email"><option [ngValue]="UserRole.Admin">Admin</option><option [ngValue]="UserRole.Agent">Agent</option><option [ngValue]="UserRole.Customer">Customer</option></select></td><td><button class="account-toggle" type="button" [class.inactive]="user.is_active === false" (click)="toggleActive(user)" [disabled]="updatingUserId === user.id"><i class="bi bi-circle-fill"></i>{{ user.is_active === false ? 'Inactive' : 'Active' }}</button></td><td class="user-actions"><button class="btn btn-sm btn-outline-primary" type="button" (click)="openEdit(user)" [attr.aria-label]="'Edit ' + user.email"><i class="bi bi-pencil me-1"></i>Edit</button><button class="btn btn-sm btn-outline-secondary" type="button" (click)="resetPassword(user)" [attr.aria-label]="'Reset password for ' + user.email">Reset password</button></td></tr> }</tbody>
+          <tbody>@for (user of users; track user.id) { <tr><td><div class="person-cell"><span class="person-avatar">{{ initials(user.full_name || user.email) }}</span><div><strong>{{ user.full_name || 'Name not provided' }}</strong><small>#{{ user.id }}</small></div></div></td><td>{{ user.email }}</td><td><select class="form-select form-select-sm role-select" [ngModel]="user.role ?? UserRole.Customer" (ngModelChange)="setRole(user, $event)" [disabled]="updatingUserId === user.id" [attr.aria-label]="'Role for ' + user.email">@if (user.role === UserRole.Admin) { <option [ngValue]="UserRole.Admin" disabled>Admin</option> }<option [ngValue]="UserRole.Agent">Agent</option><option [ngValue]="UserRole.Customer">Customer</option></select></td><td><button class="account-toggle" type="button" [class.inactive]="user.is_active === false" (click)="toggleActive(user)" [disabled]="updatingUserId === user.id"><i class="bi bi-circle-fill"></i>{{ user.is_active === false ? 'Inactive' : 'Active' }}</button></td><td class="user-actions"><button class="btn btn-sm btn-outline-primary" type="button" (click)="openEdit(user)" [attr.aria-label]="'Edit ' + user.email"><i class="bi bi-pencil me-1"></i>Edit</button><button class="btn btn-sm btn-outline-secondary" type="button" (click)="resetPassword(user)" [attr.aria-label]="'Reset password for ' + user.email">Reset password</button><button class="btn btn-sm btn-outline-danger" type="button" (click)="deleteUser(user)" [disabled]="deletingUserId === user.id" [attr.aria-label]="'Delete ' + user.email">Delete</button></td></tr> }</tbody>
         </table></div>
       } @else { <div class="empty-state"><div class="empty-icon"><i class="bi bi-people"></i></div><h3>No users found</h3><p>Create an account to add someone to this workspace.</p><button class="btn btn-primary" type="button" (click)="openCreate()">Add user</button></div> }
     </section>
@@ -101,12 +101,13 @@ export class UserManagementComponent implements OnInit {
   editingUser: UserResponseDto | null = null;
   resetPasswordMode = false;
   updatingUserId: number | null = null;
-  allowedDomain = 'softility.com';
+  deletingUserId: number | null = null;
+  allowedDomain = '';
 
   ngOnInit(): void {
     this.load();
     this.appConfig.get().subscribe(config => {
-      this.allowedDomain = config.allowed_user_email_domain || 'softility.com';
+      this.allowedDomain = config.allowed_user_email_domain;
       if (this.formOpen && !this.editingUser) {
         this.form.controls.email.setValidators([Validators.required, Validators.email, emailDomainValidator(this.allowedDomain)]);
         this.form.controls.email.updateValueAndValidity();
@@ -164,6 +165,16 @@ export class UserManagementComponent implements OnInit {
   toggleActive(user: UserResponseDto): void {
     if (this.updatingUserId !== null) return;
     this.updateQuick(user, { is_active: user.is_active === false });
+  }
+
+  deleteUser(user: UserResponseDto): void {
+    if (this.deletingUserId !== null || !window.confirm(`Delete ${user.full_name || user.email}? Their tickets and activity will be retained with anonymized account details.`)) return;
+    this.deletingUserId = user.id;
+    this.errorMessage = '';
+    this.userService.deleteUser(user.id).subscribe({
+      next: () => { this.users = this.users.filter(item => item.id !== user.id); this.deletingUserId = null; this.successMessage = 'User deleted. Ticket history has been retained.'; },
+      error: error => { this.errorMessage = this.errors.message(error, 'Could not delete this user.'); this.deletingUserId = null; }
+    });
   }
 
   private updateQuick(user: UserResponseDto, update: UserUpdateDto): void {

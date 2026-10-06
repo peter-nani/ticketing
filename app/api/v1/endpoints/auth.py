@@ -13,7 +13,10 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 @router.get("/config")
 async def auth_config():
-    return {"allowed_user_email_domain": settings.ALLOWED_USER_EMAIL_DOMAIN.lstrip("@").strip().lower()}
+    return {
+        "allowed_user_email_domain": settings.ALLOWED_USER_EMAIL_DOMAIN.lstrip("@").strip().lower(),
+        "app_brand_name": settings.APP_BRAND_NAME,
+    }
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def register(

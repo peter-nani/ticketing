@@ -1,1 +1,1 @@
-"""Command-line administration helpers."""
+"""Operational management commands."""

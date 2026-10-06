@@ -8,9 +8,10 @@ class Settings(BaseSettings):
     SECRET_KEY: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
-    ALLOWED_USER_EMAIL_DOMAIN: str = "softility.com"
+    ALLOWED_USER_EMAIL_DOMAIN: str
     
     APP_NAME: str = "FastAPI Ticketing Service"
+    APP_BRAND_NAME: str
     APP_ENV: str = "development"
     DEBUG: bool = False
 
@@ -70,6 +71,4 @@ settings = Settings()
 
 def is_allowed_user_email(email: str) -> bool:
     allowed_domain = settings.ALLOWED_USER_EMAIL_DOMAIN.strip().lower().lstrip("@")
-    if not allowed_domain or allowed_domain == "*":
-        return True
-    return email.strip().rsplit("@", 1)[-1].lower() == allowed_domain
+    return bool(allowed_domain) and allowed_domain != "*" and email.strip().rsplit("@", 1)[-1].lower() == allowed_domain

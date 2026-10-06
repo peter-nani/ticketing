@@ -13,6 +13,7 @@ from app.models.attachment import Attachment
 from app.models.ticket_audit_log import TicketAuditLog
 from app.models.ticket_tag import TicketTag
 from app.models.comment import Comment
+from app.models.admin_bootstrap import AdminBootstrapCredential
 
 config = context.config
 

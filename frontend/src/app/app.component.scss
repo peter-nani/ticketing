@@ -6,8 +6,8 @@
 .header-brand { display:flex; align-items:center; gap:.55rem; min-width:155px; }
 .menu-toggle { display:grid; place-items:center; width:34px; height:34px; border:0; border-radius:50%; color:var(--ink-2); background:transparent; font-size:1.45rem; }
 .menu-toggle:hover { background:var(--surface-muted); }
-.softility-brand { display:flex; align-items:center; gap:.5rem; color:var(--ink); text-decoration:none; font-size:1rem; letter-spacing:-.03em; }
-.softility-mark { display:grid; place-items:center; width:29px; height:29px; border-radius:9px; color:#fff; background:var(--brand); font-size:.85rem; font-weight:800; }
+.brand-link { display:flex; align-items:center; gap:.5rem; color:var(--ink); text-decoration:none; font-size:1rem; letter-spacing:-.03em; }
+.brand-mark { display:grid; place-items:center; width:29px; height:29px; border-radius:9px; color:#fff; background:var(--brand); font-size:.85rem; font-weight:800; }
 .search-wrap { position:relative; flex:1; max-width:720px; }
 .global-search { display:flex; align-items:center; height:40px; padding:0 .6rem 0 .85rem; border:1px solid var(--line); border-radius:999px; color:var(--muted); background:var(--canvas); }
 .global-search input { flex:1; min-width:0; height:100%; padding:0 .6rem; border:0; outline:0; color:var(--ink); background:transparent; font-size:13px; }
@@ -38,7 +38,7 @@
   .workspace { margin-left:0; }
   .workspace-header { min-height:58px; padding:.55rem .75rem; gap:.5rem; }
   .header-brand { min-width:auto; gap:.2rem; }
-  .softility-brand { font-size:.88rem; }
+  .brand-link { font-size:.88rem; }
   .global-search { height:34px; }
   .workspace-content { padding: 1.25rem 1rem 2rem; }
 }

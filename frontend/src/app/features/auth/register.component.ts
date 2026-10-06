@@ -12,7 +12,7 @@ import { AppConfigService, emailDomainValidator } from '../../core/services/app-
   imports: [CommonModule, ReactiveFormsModule, RouterLink],
   template: `
     <div class="register-page">
-      <div class="register-top"><a routerLink="/login" class="register-brand"><span><i class="bi bi-inboxes-fill"></i></span>Ticketflow</a><a routerLink="/login" class="back-signin"><i class="bi bi-arrow-left me-2"></i>Back to sign in</a></div>
+      <div class="register-top"><a routerLink="/login" class="register-brand"><span><i class="bi bi-inboxes-fill"></i></span>{{ brandName }}</a><a routerLink="/login" class="back-signin"><i class="bi bi-arrow-left me-2"></i>Back to sign in</a></div>
       <section class="register-card surface">
         <div class="register-icon"><i class="bi bi-person-plus"></i></div><div class="register-eyebrow">GET STARTED</div><h1>Create your account</h1><p class="register-intro">Join the workspace and keep every request moving.</p>
         @if (successMessage) { <div class="success-panel" role="status"><i class="bi bi-check-circle-fill"></i><div><strong>Account created</strong><span>{{ successMessage }}</span></div></div> }
@@ -26,7 +26,7 @@ import { AppConfigService, emailDomainValidator } from '../../core/services/app-
         <div class="register-divider"><span>Already have an account?</span></div><a routerLink="/login" class="btn btn-outline-secondary w-100">Sign in</a>
         <div class="register-note"><i class="bi bi-shield-lock me-1"></i>New accounts are created with customer access.</div>
       </section>
-      <footer class="register-footer">Ticketflow · Support workspace</footer>
+      <footer class="register-footer">{{ brandName }} · Support workspace</footer>
     </div>
   `,
   styles: [`
@@ -71,12 +71,14 @@ export class RegisterComponent implements OnInit {
   showPassword = false;
   errorMessage = '';
   successMessage = '';
-  allowedDomain = 'softility.com';
+  allowedDomain = '';
+  brandName = '';
   configLoaded = false;
 
   ngOnInit(): void {
     this.appConfig.get().subscribe(config => {
-      this.allowedDomain = config.allowed_user_email_domain || 'softility.com';
+      this.allowedDomain = config.allowed_user_email_domain;
+      this.brandName = config.app_brand_name;
       this.form.controls.email.addValidators(emailDomainValidator(this.allowedDomain));
       this.form.controls.email.updateValueAndValidity();
       this.configLoaded = true;

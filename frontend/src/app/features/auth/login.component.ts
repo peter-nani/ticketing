@@ -1,9 +1,10 @@
-import { Component, inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ApiErrorService } from '../../core/services/api-error.service';
 import { AuthService } from '../../core/services/auth.service';
+import { AppConfigService } from '../../core/services/app-config.service';
 
 @Component({
   selector: 'app-login',
@@ -12,14 +13,14 @@ import { AuthService } from '../../core/services/auth.service';
   template: `
     <div class="auth-page">
       <section class="auth-story">
-        <a class="auth-brand" routerLink="/login"><span class="auth-brand-mark"><i class="bi bi-inboxes-fill"></i></span>Ticketflow</a>
+        <a class="auth-brand" routerLink="/login"><span class="auth-brand-mark"><i class="bi bi-inboxes-fill"></i></span>{{ brandName }}</a>
         <div class="story-content"><span class="story-label">SUPPORT, IN SYNC</span><h1>Make every request<br>count.</h1><p>A calmer way to manage support requests, keep teams aligned, and get meaningful work done.</p>
           <div class="story-card"><div class="story-card-top"><span><i class="bi bi-ticket-detailed me-2"></i>Ticket overview</span><span class="live-dot">LIVE</span></div><div class="story-row"><span class="story-number">#1842</span><span class="story-ticket">Account access issue</span><span class="mini-status">In Progress</span></div><div class="story-row"><span class="story-number">#1841</span><span class="story-ticket">Billing details update</span><span class="mini-status resolved">Resolved</span></div><div class="story-progress"><span></span></div><div class="story-foot"><i class="bi bi-shield-check me-1"></i>One workspace, fewer loose ends</div></div>
-        </div><div class="story-footer">Ticketflow · Support workspace</div>
+        </div><div class="story-footer">{{ brandName }} · Support workspace</div>
       </section>
       <section class="auth-form-side">
         <div class="auth-form-wrap">
-          <div class="mobile-auth-brand"><span class="auth-brand-mark"><i class="bi bi-inboxes-fill"></i></span>Ticketflow</div>
+          <div class="mobile-auth-brand"><span class="auth-brand-mark"><i class="bi bi-inboxes-fill"></i></span>{{ brandName }}</div>
           <div class="form-intro"><span class="form-eyebrow">WELCOME BACK</span><h2>Sign in to your workspace</h2><p>Use the account associated with your support team.</p></div>
           @if (errorMessage) { <div class="auth-alert" role="alert"><i class="bi bi-exclamation-circle-fill"></i><span>{{ errorMessage }}</span></div> }
           <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
@@ -27,7 +28,7 @@ import { AuthService } from '../../core/services/auth.service';
             <div class="mb-4"><div class="d-flex justify-content-between"><label class="form-label" for="login-password">Password</label></div><div class="auth-input-wrap"><i class="bi bi-lock"></i><input id="login-password" [type]="showPassword ? 'text' : 'password'" class="form-control auth-input" formControlName="password" autocomplete="current-password" placeholder="Enter your password" [class.is-invalid]="invalid('password')"><button type="button" class="password-toggle" (click)="showPassword = !showPassword" [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'"><i [class]="showPassword ? 'bi bi-eye-slash' : 'bi bi-eye'"></i></button></div>@if (invalid('password')) { <div class="invalid-feedback d-block">Password is required.</div> }</div>
             <button type="submit" class="btn btn-primary w-100 auth-submit" [disabled]="form.invalid || loading">@if (loading) { <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Signing in… } @else { Sign in <i class="bi bi-arrow-right ms-2"></i> }</button>
           </form>
-          <p class="auth-switch">New to Ticketflow? <a routerLink="/register">Create an account</a></p>
+          <p class="auth-switch">New to {{ brandName }}? <a routerLink="/register">Create an account</a></p>
           <div class="auth-security"><i class="bi bi-lock-fill"></i> Your sign-in is protected with secure authentication</div>
         </div>
       </section>
@@ -79,16 +80,22 @@ import { AuthService } from '../../core/services/auth.service';
     @media(max-width: 700px) { .auth-page { display: block; } .auth-story { display: none; } .auth-form-side { min-height: 100vh; padding: 1.4rem; } .mobile-auth-brand { display: flex; } .form-intro h2 { font-size: 1.55rem; } }
   `]
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly errors = inject(ApiErrorService);
+  private readonly appConfig = inject(AppConfigService);
+  brandName = '';
   readonly form = this.fb.nonNullable.group({ email: ['', [Validators.required, Validators.email]], password: ['', Validators.required] });
   loading = false;
   showPassword = false;
   errorMessage = '';
+
+  ngOnInit(): void {
+    this.appConfig.get().subscribe(config => this.brandName = config.app_brand_name);
+  }
 
   invalid(field: 'email' | 'password'): boolean {
     const control = this.form.controls[field];

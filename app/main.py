@@ -7,7 +7,7 @@ from app.middlewares.correlation_id import CorrelationIdMiddleware
 from app.middlewares.error_handler import setup_exception_handlers
 from app.api.v1.router import api_router
 from app.core.database import engine
-from app.models import user, ticket, comment, attachment, ticket_audit_log, ticket_tag
+from app.models import user, ticket, comment, attachment, ticket_audit_log, ticket_tag, admin_bootstrap
 import structlog
 
 setup_logging()

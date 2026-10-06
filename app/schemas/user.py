@@ -16,6 +16,12 @@ class UserCreate(BaseModel):
     role: UserRole = UserRole.CUSTOMER
     is_active: bool = True
 
+class AdminUserCreate(BaseModel):
+    """Payload accepted only by the local, single-use bootstrap operation."""
+    email: EmailStr
+    full_name: Optional[str] = None
+    password: str = Field(min_length=8, max_length=72)
+
 class UserRegistration(BaseModel):
     """Public sign-up payload; callers cannot choose their role or active state."""
     email: EmailStr
