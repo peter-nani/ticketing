@@ -14,7 +14,6 @@ import { ApiErrorService } from '../../core/services/api-error.service';
 import { AuthService } from '../../core/services/auth.service';
 import { TicketService } from '../../core/services/ticket.service';
 import { TicketCommentsModalComponent } from './ticket-comments-modal.component';
-import { TagService, TicketTag } from '../../core/services/tag.service';
 
 @Component({
   selector: 'app-ticket-list',
@@ -30,7 +29,7 @@ import { TagService, TicketTag } from '../../core/services/tag.service';
       } @else if (errorMessage) {
         <div class="empty-state"><div class="empty-icon"><i class="bi bi-wifi-off"></i></div><h3>Tickets unavailable</h3><p>{{ errorMessage }}</p><button class="btn btn-outline-primary" type="button" (click)="load()"><i class="bi bi-arrow-clockwise me-2"></i>Try again</button></div>
       } @else if (tickets.length) {
-        @if (selected.size) { <div class="bulk-bar"><span>{{ selected.size }} selected</span><button class="btn btn-sm btn-outline-primary" type="button" (click)="bulkSetStatus(TicketStatus.InProgress)">Set in progress</button><button class="btn btn-sm btn-outline-primary" type="button" (click)="bulkSetStatus(TicketStatus.Resolved)">Resolve</button><select class="bulk-tag-select" multiple [(ngModel)]="bulkTags" aria-label="Tags to apply">@for (tag of availableTags; track tag.id) { <option [value]="tag.name">{{ tag.name }}</option> }</select><button class="btn btn-sm btn-outline-primary" type="button" (click)="bulkAssignTags()" [disabled]="!bulkTags.length">Apply tags</button><button class="btn btn-sm clear-button" type="button" (click)="selected.clear()">Clear selection</button></div> }
+        @if (selected.size) { <div class="bulk-bar"><span>{{ selected.size }} selected</span><button class="btn btn-sm btn-outline-primary" type="button" (click)="bulkSetStatus(TicketStatus.InProgress)">Set in progress</button><button class="btn btn-sm btn-outline-primary" type="button" (click)="bulkSetStatus(TicketStatus.Resolved)">Resolve</button><button class="btn btn-sm clear-button" type="button" (click)="selected.clear()">Clear selection</button></div> }
         <div class="ticket-rows">@for (ticket of tickets; track ticket.id) {
           <article class="ticket-row">
             <input type="checkbox" class="row-check" [checked]="selected.has(ticket.id)" (change)="toggleSelected(ticket.id)" [attr.aria-label]="'Select ticket ' + ticket.id">
@@ -84,7 +83,6 @@ import { TagService, TicketTag } from '../../core/services/tag.service';
     .row-time { color:var(--muted); font-size:11px; white-space:nowrap; }
     .compose-fab { position:fixed; left:1rem; bottom:1rem; z-index:10; display:flex; align-items:center; gap:.65rem; padding:.85rem 1.1rem; border-radius:999px; color:var(--ink); background:var(--surface); box-shadow:0 4px 12px rgba(0,0,0,.15); text-decoration:none; font-size:13px; font-weight:700; }
     .bulk-bar { display:flex; align-items:center; gap:.5rem; padding:.6rem .8rem; background:var(--surface-muted); }
-    .bulk-tag-select { width:120px; height:32px; border:1px solid var(--border-interactive); border-radius:6px; color:var(--text-primary); background:var(--surface); font-size:11px; }
     .category-label { color: #596579; font-size: .8rem; }
     .date-cell { color: #66758a; white-space: nowrap; }
     .icon-action { display: grid; place-items: center; width: 32px; height: 32px; border-radius: .55rem; color: var(--muted); }
@@ -104,7 +102,6 @@ export class TicketListComponent implements OnInit {
   private readonly errors = inject(ApiErrorService);
   private readonly auth = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
-  private readonly tagService = inject(TagService);
   readonly TicketPriority = TicketPriorityDto;
   readonly statuses = Object.values(TicketStatusDto);
   readonly priorities = Object.values(TicketPriorityDto);
@@ -130,8 +127,6 @@ export class TicketListComponent implements OnInit {
   mailbox = '';
   selected = new Set<number>();
   starred = new Set<number>(JSON.parse(localStorage.getItem('ticketflow-starred') ?? '[]') as number[]);
-  availableTags: TicketTag[] = [];
-  bulkTags: string[] = [];
 
   get isAdmin(): boolean { return this.auth.currentUser()?.role === UserRoleDto.Admin; }
   get showOwnerFilters(): boolean { return this.auth.currentUser()?.role !== UserRoleDto.Customer; }
@@ -141,7 +136,6 @@ export class TicketListComponent implements OnInit {
 
   get mailboxTitle(): string { return this.mailbox === 'sent' ? 'Sent' : this.mailbox === 'tags' ? 'Tagged tickets' : 'Inbox'; }
   ngOnInit(): void {
-    this.tagService.list().subscribe({ next: tags => this.availableTags = tags, error: () => this.availableTags = [] });
     this.route.queryParamMap.subscribe(params => {
       this.status = ''; this.priority = ''; this.category = ''; this.assigneeId = null; this.reporterId = null;
       this.search = params.get('q') ?? ''; this.mailbox = params.get('mailbox') ?? ''; this.applySearch();
@@ -182,20 +176,6 @@ export class TicketListComponent implements OnInit {
       this.ticketService.update(ticket.id, { status }).subscribe({
         next: updated => { this.tickets = this.tickets.map(item => item.id === updated.id ? updated : item); this.updatingStatusId = null; updateNext(); },
         error: error => { this.actionError = this.errors.message(error, 'Some selected tickets could not be updated.'); this.updatingStatusId = null; }
-      });
-    };
-    updateNext();
-  }
-
-  bulkAssignTags(): void {
-    const pending = this.tickets.filter(ticket => this.selected.has(ticket.id) && JSON.stringify(ticket.tags ?? []) !== JSON.stringify(this.bulkTags));
-    this.selected.clear();
-    const updateNext = (): void => {
-      const ticket = pending.shift();
-      if (!ticket) return;
-      this.ticketService.update(ticket.id, { tags: [...this.bulkTags] }).subscribe({
-        next: updated => { this.tickets = this.tickets.map(item => item.id === updated.id ? updated : item); updateNext(); },
-        error: error => { this.actionError = this.errors.message(error, 'Some selected ticket tags could not be updated.'); }
       });
     };
     updateNext();
